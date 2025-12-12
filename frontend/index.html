@@ -1,356 +1,514 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-Time Monitoring Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Real-Time Process Monitoring Dashboard</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    <style>
-        /* -------------------------
-           THEME VARIABLES
-        --------------------------*/
-        :root {
-            --bg-color: #f4f7fb;
-            --text-color: #333;
-            --card-bg: #ffffff;
-            --border-color: rgba(0,0,0,0.1);
-            --neon-color: rgba(0, 255, 170, 0.6);
-        }
+  <!-- Google font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-        .chart-container {
-    width: 200px;
-    height: 200px;
-    margin: auto;
-    /* Hover removed */
-    transition: none;
+  <style>
+    .modal-backdrop {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 30;
 }
 
-        /* .chart-container:hover {
-            transform: scale(1.12);
-            filter: drop-shadow(0 0 12px var(--neon-color));
-        } */
+.modal {
+  background: var(--card);
+  padding: 18px;
+  border-radius: 12px;
+  max-width: 680px;
+  width: 94%;
+}
+    :root{
+      --bg: #0b1220;
+      --card: #0f1724;
+      --muted: #95a3b3;
+      --accent: #7c5cff;
+      --glass: rgba(255,255,255,0.03);
+      --success: #22c55e;
+      --danger: #ff6b6b;
+      --card-contrast: rgba(255,255,255,0.02);
+    }
+    [data-theme="light"]{
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --accent: #6b21a8;
+      --glass: rgba(0,0,0,0.03);
+      --success: #059669;
+      --danger: #dc2626;
+      --card-contrast: rgba(0,0,0,0.02);
+      color-scheme: light;
+    }
 
-        body.dark {
-            --bg-color: #0c0f1a;
-            --text-color: #f0f0f0;
-            --card-bg: #141a2a;
-            --border-color: rgba(255,255,255,0.1);
-            --neon-color: rgba(0, 255, 255, 0.8);
-        }
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#071022);color:#e6eef8}
+    .wrap{max-width:1200px;margin:18px auto;padding:18px}
+    header{display:flex;gap:16px;align-items:center;margin-bottom:16px}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700}
+    h1{margin:0;font-size:20px}
+    .subtitle{color:var(--muted);font-size:13px}
+    .controls{margin-left:auto;display:flex;gap:8px;align-items:center}
 
-        /* -------------------------
-           GENERAL STYLING
-        --------------------------*/
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: var(--bg-color);
-            color: var(--text-color);
-            transition: 0.4s ease-in-out;
-        }
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,0.6);border:1px solid var(--card-contrast)}
+    .col-span-3{grid-column:span 3}
+    .col-span-6{grid-column:span 6}
+    .col-span-12{grid-column:span 12}
+    .stat{display:flex;flex-direction:column;gap:6px}
+    .muted{color:var(--muted);font-size:13px}
+    .big{font-size:26px;font-weight:700}
+    .tiny{font-size:12px;color:var(--muted)}
+    .row{display:flex;gap:12px;align-items:center}
+    canvas{width:100%!important;height:160px!important}
 
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: var(--text-color);
-        }
+    /* Processes table */
+    .table-wrap{overflow:auto;max-height:350px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 8px;text-align:left;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.03)}
+    th{cursor:pointer;user-select:none;color:var(--muted);font-weight:600}
+    tr:hover{background:rgba(255,255,255,0.02)}
+    .search-row{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+    input[type="search"]{padding:8px;border-radius:8px;border:0;background:var(--glass);color:inherit;width:320px}
 
-        /* -------------------------
-           THEME BUTTON
-        --------------------------*/
-        .theme-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 10px 18px;
-            background: var(--card-bg);
-            color: var(--text-color);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-        }
+    /* bar */
+    .bar{height:10px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden}
+    .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#06b6d4)}
 
-        .theme-toggle:hover {
-            background: var(--text-color);
-            color: var(--card-bg);
-        }
+    .pill{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;font-size:12px;color:var(--muted)}
+    .btn{background:var(--accent);color:white;padding:8px 10px;border-radius:8px;border:0;cursor:pointer;font-weight:600}
+    .btn.ghost{background:transparent;border:1px solid var(--glass}
+    .btn.small{padding:6px 8px;font-size:13px}
+    .status{padding:6px 10px;border-radius:8px;font-size:13px}
 
-        /* -------------------------
-           CARDS
-        --------------------------*/
-        .container {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+    /* modal */
+    .modal-backdrop{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:30}
+    .modal{background:var(--card);padding:18px;border-radius:12px;max-width:680px;width:94%}
+    .modal .row{justify-content:space-between}
 
-        .card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            width: 350px;
-            box-shadow: 0 4px 10px var(--border-color);
-            border: 1px solid var(--border-color);
-            transition: 0.3s ease;
-        }
+    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
 
-        .card:hover {
-            transform: scale(1.03);
-            box-shadow: 0 0 20px var(--neon-color);
-        }
-
-        .wide-card {
-            width: 95%;
-        }
-
-        .stat-value {
-            font-size: 26px;
-            font-weight: bold;
-        }
-
-        .progress-bar {
-            height: 10px;
-            background: #ddd;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .progress {
-            height: 100%;
-            width: 0%;
-            transition: width 0.5s;
-            background: linear-gradient(90deg, #4caf50, #81c784);
-        }
-
-        /* -------------------------
-           TABLE
-        --------------------------*/
-        table {
-            width: 100%;
-            margin-top: 15px;
-            border-collapse: collapse;
-        }
-
-        table th, table td {
-            padding: 10px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        table th {
-            background: rgba(255,255,255,0.05);
-            color: var(--text-color);
-        }
-
-        #searchBox {
-            width: 50%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background: var(--card-bg);
-            color: var(--text-color);
-        }
-
-    </style>
+    @media (max-width:900px){
+      .col-span-3,.col-span-6{grid-column:span 12}
+      canvas{height:200px!important}
+      input[type="search"]{width:100%}
+    }
+  </style>
 </head>
+<body data-theme="dark">
+  <div class="wrap">
+    <header>
+      <div class="logo">RT</div>
+      <div>
+        <h1>Real-Time Process Monitoring</h1>
+        <div class="subtitle">Live system health & process insights — updated every second</div>
+      </div>
 
-<!-- DEFAULT DARK MODE -->
-<body class="dark">
+      <div class="controls">
+        <div id="connStatus" class="status pill">Connecting...</div>
+        <button id="pauseBtn" class="btn small">Pause</button>
+        <button id="refreshBtn" class="btn small" title="Fetch latest process snapshot">Refresh</button>
+        <button id="exportBtn" class="btn small" title="Export visible processes to CSV">Export CSV</button>
+        <label style="display:flex;align-items:center;gap:8px">
+          <input id="themeToggle" type="checkbox" /> Light
+        </label>
+      </div>
+    </header>
 
-<button class="theme-toggle" onclick="toggleTheme()">☀️ Light Mode</button>
+    <main class="grid" id="grid">
 
-<h1>Real-Time Monitoring Dashboard</h1>
+      <!-- Key cards -->
+      <div class="card col-span-3">
+        <div class="stat">
+          <div class="muted">CPU</div>
+          <div class="big" id="cpuVal">—%</div>
+          <div class="tiny" id="cpuPerCore">—</div>
+        </div>
+      </div>
 
-<div class="container">
+      <div class="card col-span-3">
+        <div class="stat">
+          <div class="muted">Memory</div>
+          <div class="big" id="memVal">—%</div>
+          <div class="tiny" id="memText">— / —</div>
+        </div>
+      </div>
 
-    <!-- CPU CARD -->
-    <div class="card">
-        <h3>CPU Usage</h3>
-        <p class="stat-value" id="cpuText">--%</p>
-        <div class="progress-bar">
-            <div class="progress" id="cpuBar"></div>
+      <div class="card col-span-3">
+        <div class="stat">
+          <div class="muted">Network</div>
+          <div class="big" id="netVal">— KB/s</div>
+          <div class="tiny" id="netText">sent: — recv: —</div>
+        </div>
+      </div>
+
+      <div class="card col-span-3">
+        <div class="stat">
+          <div class="muted">Disk I/O</div>
+          <div class="big" id="diskVal">— KB/s</div>
+          <div class="tiny" id="diskText">read: — write: —</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="card col-span-6">
+        <h2 style="margin-top:0;color:var(--accent)">CPU Usage</h2>
+        <canvas id="cpuChart"></canvas>
+      </div>
+
+      <div class="card col-span-6">
+        <h2 style="margin-top:0;color:#06b6d4">Memory Usage</h2>
+        <canvas id="memChart"></canvas>
+      </div>
+
+      <div class="card col-span-6">
+        <h2 style="margin-top:0;color:#f59e0b">Network Throughput</h2>
+        <canvas id="netChart"></canvas>
+      </div>
+
+      <div class="card col-span-6">
+        <h2 style="margin-top:0;color:#10b981">Disk I/O Rate</h2>
+        <canvas id="diskChart"></canvas>
+      </div>
+
+      <!-- Processes -->
+      <div class="card col-span-12">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <strong>Top Processes</strong>
+            <div class="tiny" id="procNote">Automatically sorts by CPU%</div>
+          </div>
+
+          <div class="search-row">
+            <input id="procSearch" type="search" placeholder="Search PID or process name..." />
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="pill">Showing <span id="procCount">0</span></div>
+            </div>
+          </div>
         </div>
 
-        <div class="chart-container">
-            <canvas id="cpuChart"></canvas>
-        </div>
-    </div>
-
-    <!-- MEMORY CARD -->
-    <div class="card">
-        <h3>Memory Usage</h3>
-        <p class="stat-value" id="memoryText">--%</p>
-        <div class="progress-bar">
-            <div class="progress" id="memoryBar"></div>
-        </div>
-
-        <div class="chart-container">
-            <canvas id="memoryChart"></canvas>
-        </div>
-    </div>
-
-    <!-- CPU HISTORY -->
-    <div class="card wide-card">
-        <h3>CPU Usage (Last 60 Seconds)</h3>
-        <canvas id="cpuHistoryChart"></canvas>
-    </div>
-
-    <!-- PROCESS TABLE -->
-    <div class="card wide-card">
-        <h3>Top Processes</h3>
-
-        <input type="text" id="searchBox" placeholder="Search process...">
-
-        <table>
+        <div class="table-wrap">
+          <table id="procTable" aria-describedby="procNote">
             <thead>
-            <tr>
-                <th>Process</th>
-                <th>CPU %</th>
-                <th>Memory %</th>
-            </tr>
+              <tr>
+                <th data-key="pid">PID ▲</th>
+                <th data-key="name">Name</th>
+                <th data-key="cpu_percent">CPU %</th>
+                <th data-key="memory_percent">Memory %</th>
+                <th data-key="usage">Usage</th>
+              </tr>
             </thead>
-            <tbody id="processTable"></tbody>
-        </table>
-    </div>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
 
-</div>
+    </main>
+
+    <footer>
+      Built for your OS project — live dashboard connected to backend WebSocket `/ws`.
+    </footer>
+  </div>
+
+  <!-- Modal for process details -->
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="row">
+        <h3 id="modalTitle">Process details</h3>
+        <button id="closeModal" class="btn small">Close</button>
+      </div>
+      <div style="margin-top:12px" id="modalBody">
+        <!-- filled dynamically -->
+      </div>
+    </div>
+  </div>
 
 <script>
-/* -------------------------
-   THEME TOGGLE
---------------------------*/
-function toggleTheme() {
-    document.body.classList.toggle("dark");
+/* ------------------------------
+   Settings & small helpers
+   ------------------------------ */
+const WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + '://127.0.0.1:8000/ws';
+const MAX_POINTS = 60; // number of points to show in charts
+let paused = false;
+let ws;
+let reconnectInterval = 1500;
+let lastMessageAt = null;
+let latestProcs = []; // full array from server
+let sortKey = 'cpu_percent';
+let sortDir = 'desc'; // 'asc' or 'desc'
 
-    document.querySelector(".theme-toggle").innerText =
-        document.body.classList.contains("dark")
-            ? "☀️ Light Mode"
-            : "🌙 Dark Mode";
-}
+// helpers
+const $ = (s) => document.querySelector(s);
+const $all = (s) => Array.from(document.querySelectorAll(s));
+const formatKB = (bytes) => (bytes/1024).toFixed(1);
+const humanBytes = (b) => {
+  if (b === undefined || b === null) return '—';
+  const units = ['B','KB','MB','GB','TB'];
+  let i=0; let v=b;
+  while (v>1024 && i<units.length-1){v/=1024;i++;}
+  return `${v.toFixed(1)} ${units[i]}`;
+};
 
-/* -------------------------
-   DONUT CHARTS
---------------------------*/
-let cpuChart, memoryChart;
-
-function createCharts() {
-    cpuChart = new Chart(document.getElementById("cpuChart"), {
-        type: "doughnut",
-        data: {
-            labels: ["Used", "Free"],
-            datasets: [{
-                data: [0, 100],
-                backgroundColor: ["#ff7043", "#ffe0b2"]
-            }]
-        },
-        options: { plugins: { legend: { display: false } }, cutout: "60%" }
-    });
-
-    memoryChart = new Chart(document.getElementById("memoryChart"), {
-        type: "doughnut",
-        data: {
-            labels: ["Used", "Free"],
-            datasets: [{
-                data: [0, 100],
-                backgroundColor: ["#42a5f5", "#bbdefb"]
-            }]
-        },
-        options: { plugins: { legend: { display: false } }, cutout: "60%" }
-    });
-}
-
-createCharts();
-
-/* -------------------------
-   CPU HISTORY GRAPH
---------------------------*/
-let historyValues = Array(60).fill(0);
-let historyLabels = Array.from({length: 60}, (_, i) => (i - 59) + "s");
-
-const ctx = document.getElementById("cpuHistoryChart").getContext("2d");
-
-let gradient = ctx.createLinearGradient(0,0,0,300);
-gradient.addColorStop(0, "rgba(0,255,170,0.4)");
-gradient.addColorStop(1, "rgba(0,255,170,0.05)");
-
-const cpuHistoryChart = new Chart(ctx, {
-    type: "line",
-    data: {
-        labels: historyLabels,
-        datasets: [{
-            label: "CPU (%)",
-            data: historyValues,
-            borderColor: "rgba(0,255,170,1)",
-            backgroundColor: gradient,
-            fill: true,
-            borderWidth: 2,
-            tension: 0.3
-        }]
-    },
+/* ------------------------------
+   Charts (Chart.js) setup
+   ------------------------------ */
+function createLine(ctx, label, color, max=100){
+  return new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [{ label, data: [], borderColor: color, backgroundColor: color+'33', tension: 0.25, pointRadius:0 }]},
     options: {
-        animation: { duration: 300 },
-        plugins: { legend: { display: false } },
-        scales: { y: { min: 0, max: 100 }, x: { grid: { display: false } } }
+      animation:false,
+      maintainAspectRatio:false,
+      scales:{
+        x:{display:false},
+        y:{min:0, max, ticks:{color:'var(--muted)'}, grid:{color:'rgba(255,255,255,0.03)'}}
+      },
+      plugins:{legend:{display:false}}
     }
+  });
+}
+const cpuChart = createLine($('#cpuChart').getContext('2d'), 'CPU %', '#7c5cff', 100);
+const memChart = createLine($('#memChart').getContext('2d'), 'Mem %', '#06b6d4', 100);
+const netChart = createLine($('#netChart').getContext('2d'), 'Net KB/s', '#f59e0b', 2000);
+const diskChart = createLine($('#diskChart').getContext('2d'), 'Disk KB/s', '#10b981', 2000);
+
+function pushPoint(chart, label, value){
+  chart.data.labels.push(label);
+  chart.data.datasets[0].data.push(value);
+  if (chart.data.labels.length > MAX_POINTS){
+    chart.data.labels.shift();
+    chart.data.datasets[0].data.shift();
+  }
+  chart.update('none');
+}
+
+/* ------------------------------
+   WebSocket connection & handlers
+   ------------------------------ */
+function connect(){
+  ws = new WebSocket(WS_URL);
+  $('#connStatus').textContent = 'Connecting...';
+  $('#connStatus').style.background = 'transparent';
+
+  ws.onopen = () => {
+    $('#connStatus').textContent = 'Connected';
+    $('#connStatus').classList.remove('danger');
+    $('#connStatus').style.background = 'rgba(34,197,94,0.08)';
+  };
+
+  ws.onmessage = (ev) => {
+    lastMessageAt = Date.now();
+    try {
+      const d = JSON.parse(ev.data);
+      if (!d) return;
+
+      // update main stats
+      $('#cpuVal').textContent = Math.round(d.cpu_percent) + '%';
+      $('#memVal').textContent = Math.round(d.mem_percent) + '%';
+      $('#memText').textContent = `${humanBytes(d.mem_used)} / ${humanBytes(d.mem_total)}`;
+      $('#cpuPerCore').textContent = d.cpu_per_cpu ? `per-core: ${d.cpu_per_cpu.map(x=>Math.round(x)).join('% ')}%` : '';
+      const netKBSent = (d.net_sent_rate||0)/1024;
+      const netKBRecv = (d.net_recv_rate||0)/1024;
+      $('#netVal').textContent = (netKBSent + netKBRecv).toFixed(1) + ' KB/s';
+      $('#netText').textContent = `sent: ${netKBSent.toFixed(1)} KB/s recv: ${netKBRecv.toFixed(1)} KB/s`;
+      const diskKBRead = (d.disk_read_rate||0)/1024;
+      const diskKBWrite = (d.disk_write_rate||0)/1024;
+      $('#diskVal').textContent = (diskKBRead + diskKBWrite).toFixed(1) + ' KB/s';
+      $('#diskText').textContent = `read: ${diskKBRead.toFixed(1)} KB/s write: ${diskKBWrite.toFixed(1)} KB/s`;
+
+      // push chart points (use timestamp if available)
+      const tLabel = d.timestamp ? new Date(d.timestamp*1000).toLocaleTimeString() : new Date().toLocaleTimeString();
+      if (!paused){
+        pushPoint(cpuChart, tLabel, Number(d.cpu_percent || 0));
+        pushPoint(memChart, tLabel, Number(d.mem_percent || 0));
+        pushPoint(netChart, tLabel, (d.net_sent_rate||0)/1024 + (d.net_recv_rate||0)/1024);
+        pushPoint(diskChart, tLabel, (d.disk_read_rate||0)/1024 + (d.disk_write_rate||0)/1024);
+      }
+
+      // processes
+      latestProcs = d.processes || [];
+      renderProcessTable();
+    } catch (e){
+      console.error('parse ws', e);
+    }
+  };
+
+  ws.onclose = () => {
+    $('#connStatus').textContent = 'Disconnected — reconnecting...';
+    $('#connStatus').style.background = 'rgba(255,107,107,0.06)';
+    setTimeout(connect, reconnectInterval);
+  };
+
+  ws.onerror = (err) => {
+    console.error('ws err', err);
+    $('#connStatus').textContent = 'Error';
+    $('#connStatus').style.background = 'rgba(255,107,107,0.06)';
+  };
+}
+connect();
+
+/* ------------------------------
+   Processes table & UI interactions
+   ------------------------------ */
+function renderProcessTable(){
+  const tbody = $('#procTable tbody');
+  const query = ($('#procSearch').value || '').trim().toLowerCase();
+
+  let procs = latestProcs.slice();
+  // filter
+  if (query){
+    procs = procs.filter(p => String(p.pid).includes(query) || (p.name||'').toLowerCase().includes(query));
+  }
+
+  // sort
+  procs.sort((a,b)=>{
+    const A = a[sortKey] ?? 0;
+    const B = b[sortKey] ?? 0;
+    if (A === B) return 0;
+    return sortDir === 'asc' ? (A < B ? -1 : 1) : (A > B ? -1 : 1);
+  });
+
+  $('#procCount').textContent = procs.length;
+  tbody.innerHTML = '';
+
+  procs.forEach(p=>{
+    const tr = document.createElement('tr');
+
+    const pidTd = document.createElement('td'); pidTd.textContent = p.pid;
+    const nameTd = document.createElement('td'); nameTd.textContent = p.name || '—';
+    const cpuTd = document.createElement('td'); cpuTd.textContent = (p.cpu_percent||0).toFixed(1);
+    const memTd = document.createElement('td'); memTd.textContent = (p.memory_percent||0).toFixed(2);
+    const usageTd = document.createElement('td');
+
+    const bar = document.createElement('div'); bar.className='bar';
+    const inner = document.createElement('i');
+    inner.style.width = Math.min(100, (p.cpu_percent||0)) + '%';
+    bar.appendChild(inner);
+    usageTd.appendChild(bar);
+
+    tr.append(pidTd, nameTd, cpuTd, memTd, usageTd);
+    tr.style.cursor = 'pointer';
+    tr.addEventListener('click', ()=> openProcessModal(p));
+    tbody.appendChild(tr);
+  });
+}
+
+// sorting on header click
+$all('#procTable th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if (!key) return;
+    if (sortKey === key) sortDir = (sortDir === 'asc') ? 'desc' : 'asc';
+    else { sortKey = key; sortDir = 'desc'; }
+    // update header arrows
+    $all('#procTable th').forEach(h=> h.textContent = (h.dataset.key === sortKey ? `${h.textContent.split(' ')[0]} ${sortDir==='asc'?'▲':'▼'}` : h.textContent.split(' ')[0]));
+    renderProcessTable();
+  });
 });
 
-function updateHistory(val) {
-    historyValues.shift();
-    historyValues.push(val);
-    cpuHistoryChart.update();
+/* ------------------------------
+   Modal
+   ------------------------------ */
+function openProcessModal(proc){
+  $('#modalTitle').textContent = `${proc.name || 'Process'} — PID ${proc.pid}`;
+  $('#modalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><strong>PID</strong><div class="tiny">${proc.pid}</div></div>
+      <div><strong>CPU %</strong><div class="tiny">${(proc.cpu_percent||0).toFixed(2)}</div></div>
+      <div><strong>Memory %</strong><div class="tiny">${(proc.memory_percent||0).toFixed(2)}</div></div>
+      <div><strong>User</strong><div class="tiny">${proc.username || '—'}</div></div>
+      <div style="grid-column:1/-1;margin-top:8px"><strong>Command / Path</strong><div class="tiny">${proc.cmdline ? (Array.isArray(proc.cmdline) ? proc.cmdline.join(' ') : String(proc.cmdline)) : '—'}</div></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+      <button id="killBtn" class="btn small">(Demo) Send Kill</button>
+      <button id="closeModalBtn" class="btn small ghost">Close</button>
+    </div>
+  `;
+  // demo kill alert (do not actually send)
+  $('#killBtn').addEventListener('click', ()=> alert('This is a demo. Killing processes would require backend API with proper permission.'));
+  $('#closeModalBtn').addEventListener('click', closeModal);
+  $('#modalBackdrop').style.display = 'flex';
 }
 
-/* -------------------------
-   MAIN UPDATE LOOP
---------------------------*/
-async function updateStats() {
-    try {
-        let response = await fetch("http://127.0.0.1:5000/stats");
-        let data = await response.json();
-
-        // CPU
-        cpuText.innerText = data.cpu + "%";
-        cpuBar.style.width = data.cpu + "%";
-        cpuChart.data.datasets[0].data = [data.cpu, 100 - data.cpu];
-        cpuChart.update();
-        updateHistory(data.cpu);
-
-        // Memory
-        memoryText.innerText = data.memory + "%";
-        memoryBar.style.width = data.memory + "%";
-        memoryChart.data.datasets[0].data = [data.memory, 100 - data.memory];
-        memoryChart.update();
-
-        // Process Table
-        let table = document.getElementById("processTable");
-        table.innerHTML = "";
-        let search = document.getElementById("searchBox").value.toLowerCase();
-
-        data.processes
-            .filter(p => p.name.toLowerCase().includes(search))
-            .slice(0, 10)
-            .forEach(p => {
-                table.innerHTML += `
-                <tr>
-                    <td>${p.name}</td>
-                    <td>${p.cpu}</td>
-                    <td>${p.memory}</td>
-                </tr>`;
-            });
-
-    } catch (err) {
-        console.error("Error fetching stats:", err);
-    }
+function closeModal(){
+  $('#modalBackdrop').style.display = 'none';
 }
+$('#closeModal').addEventListener('click', closeModal);
+$('#modalBackdrop').addEventListener('click', (e)=> { if (e.target === $('#modalBackdrop')) closeModal(); });
 
-setInterval(updateStats, 1000);
+/* ------------------------------
+   Controls: pause, refresh, export, theme
+   ------------------------------ */
+$('#pauseBtn').addEventListener('click', ()=>{
+  paused = !paused;
+  $('#pauseBtn').textContent = paused ? 'Resume' : 'Pause';
+});
+$('#refreshBtn').addEventListener('click', ()=> {
+  // simple: clear charts and request a fresh snapshot; backend pushes next snapshot automatically
+  cpuChart.data.labels = []; cpuChart.data.datasets[0].data = [];
+  memChart.data.labels = []; memChart.data.datasets[0].data = [];
+  netChart.data.labels = []; netChart.data.datasets[0].data = [];
+  diskChart.data.labels = []; diskChart.data.datasets[0].data = [];
+  [cpuChart,memChart,netChart,diskChart].forEach(c => c.update());
+});
+$('#exportBtn').addEventListener('click', ()=> {
+  // export visible procs to CSV
+  const rows = [['pid','name','cpu_percent','memory_percent','username']];
+  const query = ($('#procSearch').value || '').trim().toLowerCase();
+  let procs = latestProcs.slice();
+  if (query) procs = procs.filter(p => String(p.pid).includes(query) || (p.name||'').toLowerCase().includes(query));
+  procs.forEach(p => rows.push([p.pid, p.name||'', p.cpu_percent||0, p.memory_percent||0, p.username||'']));
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `processes_${Date.now()}.csv`; a.click();
+});
 
+// search
+$('#procSearch').addEventListener('input', renderProcessTable);
+
+// theme toggle
+$('#themeToggle').addEventListener('change', (e)=>{
+  document.body.setAttribute('data-theme', e.target.checked ? 'light' : 'dark');
+});
+
+/* ------------------------------
+   Auto-reconnect health check (optional)
+   ------------------------------ */
+setInterval(()=>{
+  if (!lastMessageAt) return;
+  const sec = (Date.now() - lastMessageAt)/1000;
+  if (sec > 6){
+    $('#connStatus').textContent = 'Stale (no updates)';
+    $('#connStatus').style.background = 'rgba(255,193,7,0.06)';
+  }
+}, 2000);
+
+/* ------------------------------
+   On load: minimal placeholder data
+   ------------------------------ */
+(function seed(){
+  const now = new Date().toLocaleTimeString();
+  for (let i=0;i<8;i++){
+    const t = new Date(Date.now() - (8-i)*1000).toLocaleTimeString();
+    pushPoint(cpuChart, t, 10+Math.random()*20);
+    pushPoint(memChart, t, 30+Math.random()*10);
+    pushPoint(netChart, t, Math.random()*40);
+    pushPoint(diskChart, t, Math.random()*30);
+  }
+})();
 </script>
-
 </body>
 </html>
