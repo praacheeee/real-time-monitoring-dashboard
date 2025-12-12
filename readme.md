@@ -6,35 +6,35 @@ It provides continuous monitoring of:
 
 1. CPU Usage (Live + Per-Core)
 2. Memory Usage (Live + Usage Summary)
-🌐 Network Throughput (Upload/Download Rate)
-💽 Disk I/O Rate (Read/Write)
-📁 Top Processes (with search, sort, and modal details)
-📊 4 Live Animated Charts (CPU, Memory, Network, Disk)
-🌙 Dark/Light Mode Toggle
-⚡ Real-time updates every second via WebSocket
+3. Network Throughput (Upload/Download Rate)
+4. Disk I/O Rate (Read/Write)
+5. Top Processes (with search, sort, and modal details)
+6. 4 Live Animated Charts (CPU, Memory, Network, Disk)
+7. Dark/Light Mode Toggle
+8. Real-time updates every second via WebSocket
 
 This project uses:
 
 Backend (Python)
 
-⚙️ FastAPI — High-performance ASGI backend
+1. FastAPI — High-performance ASGI backend
 
-🔄 WebSockets — Live streaming updates
+2. WebSockets — Live streaming updates
 
-📡 psutil — System metrics
+3. psutil — System metrics
 
-🔧 uvicorn — ASGI server
+4. uvicorn — ASGI server
 
 Frontend
 
-🎨 HTML / CSS (Custom Neon UI)
+1. HTML / CSS (Custom Neon UI)
 
-🧠 JavaScript
+2.� JavaScript
 
-📊 Chart.js for animated graphs
+3. Chart.js for animated graphs
 
-🚀 Features
-✔ Real-Time Live Metrics (WebSocket)
+4. Features
+5. Real-Time Live Metrics (WebSocket)
 
 The backend pushes system stats every second:
 
@@ -75,19 +75,19 @@ Searching (live filtering)
 
 Modal popup with extra details (user, cmdline, etc.)
 
-✔ Pause, Refresh & Export
+1. Pause, Refresh & Export
 
-⏸ Pause live feed
+2. Pause live feed
 
-🔄 Refresh charts
+3. Refresh charts
 
-📤 Export visible process list to CSV
+4. Export visible process list to CSV
 
-✔ Theme Toggle
+5. Theme Toggle
 
 Dark mode by default → switch to light mode instantly.
 
-🛠️ Tech Stack
+1. Tech Stack
 Component	Technology
 Frontend	HTML, CSS, JavaScript, Chart.js
 Backend	FastAPI + WebSockets
@@ -108,8 +108,8 @@ Real-time Monitoring Dashboard project/
 ├── .gitignore
 └── README.md
 
-⚙️ Setup & Installation
-1️⃣ Create Virtual Environment
+I Setup & Installation
+II Create Virtual Environment
 
 Inside the project folder:
 
@@ -122,10 +122,10 @@ Windows PowerShell:
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\venv\Scripts\activate
 
-2️⃣ Install Dependencies
+III) Install Dependencies
 pip install fastapi uvicorn psutil websockets
 
-3️⃣ Run the Backend Server
+IV) Run the Backend Server
 
 From inside:
 
@@ -141,7 +141,7 @@ Backend WebSocket is now live at:
 
 ws://127.0.0.1:8000/ws
 
-4️⃣ Run the Frontend
+ Run the Frontend
 Option A — Open the HTML file
 
 Open:
