@@ -4,8 +4,8 @@ A fully interactive, real-time system monitoring dashboard with a modern neon UI
 
 It provides continuous monitoring of:
 
-🔥 CPU Usage (Live + Per-Core)
-🧠 Memory Usage (Live + Usage Summary)
+1. CPU Usage (Live + Per-Core)
+2. Memory Usage (Live + Usage Summary)
 🌐 Network Throughput (Upload/Download Rate)
 💽 Disk I/O Rate (Read/Write)
 📁 Top Processes (with search, sort, and modal details)
